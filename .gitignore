@@ -1,0 +1,23 @@
+# Environment
+.env
+.venv/
+
+# Local data and experiment output
+data/
+runs/
+
+# Python / tooling caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+*.egg-info/
+build/
+dist/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
