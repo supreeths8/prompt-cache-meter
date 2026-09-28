@@ -1,0 +1,86 @@
+# Every number the simulator uses. Edit here, not in code.
+# Source: developers.openai.com/api/docs/guides/prompt-caching and /pricing, checked 2026-09-28.
+# Lines marked ASSUMPTION are not stated by the docs.
+
+[tokens]
+encoding = "o200k_base"
+# ASSUMPTION: chat-format overhead from the OpenAI cookbook token-counting recipe.
+tokens_per_message = 3
+reply_priming_tokens = 3
+
+[limits]
+max_writes_per_request = 4
+# Implicit lookups: the latest eligible message end plus up to this many earlier ones.
+implicit_lookback_messages = 20
+# Explicit lookups: the first N and the latest M explicit breakpoints.
+explicit_lookup_first = 2
+explicit_lookup_latest = 50
+
+[ollama]
+# Used when OLLAMA_CONTEXT_LENGTH is not set in the environment.
+default_context_length = 4096
+# Tokenizers differ, so warn before the tiktoken count actually reaches the limit.
+context_warning_ratio = 0.9
+
+# TTL policies. write_multiplier is the TOTAL rate for written tokens, not a surcharge.
+[ttls.in_memory]
+# Docs: "around 5 to 10 minutes of inactivity, up to one hour". ASSUMPTION: 10 minutes idle.
+minutes = 10
+is_refreshed_on_read = true
+write_multiplier = 1.0
+
+[ttls."24h"]
+minutes = 1440
+is_refreshed_on_read = false
+write_multiplier = 1.0
+
+[ttls."30m"]
+minutes = 30
+# Docs: "A 30-minute read refreshes coverage to at least 30 minutes after that read."
+is_refreshed_on_read = true
+write_multiplier = 1.25
+
+[ttls."12h"]
+minutes = 720
+is_refreshed_on_read = false
+write_multiplier = 2.5
+
+# Earlier models (before GPT-5.6): automatic caching, no write charge, no explicit breakpoints.
+[generations.legacy]
+default_model = "gpt-5"
+default_ttl = "in_memory"
+allowed_ttls = ["in_memory", "24h"]
+cache_policy = "fixed_interval"
+min_cacheable_tokens = 1024
+# Implicit breakpoints are model-dependent (GPT-5.5 uses 2,048). 128 gives the classic behaviour.
+breakpoint_interval_tokens = 128
+reported_multiple_tokens = 128
+
+# GPT-5.6 and later: implicit at message boundaries, optional explicit breakpoints, billed writes.
+[generations.new]
+default_model = "gpt-6.1-terra"
+default_ttl = "30m"
+allowed_ttls = ["30m", "12h"]
+cache_policy = "message_boundary"
+min_cacheable_tokens = 1024
+
+# USD per million tokens, Standard tier, short context. Placeholders: check the pricing page.
+[prices."gpt-5"]
+input_per_million = 1.25
+cached_read_multiplier = 0.1
+output_per_million = 10.0
+
+[prices."gpt-5-mini"]
+input_per_million = 0.25
+cached_read_multiplier = 0.1
+output_per_million = 2.0
+
+[prices."gpt-6.1-terra"]
+input_per_million = 1.0
+cached_read_multiplier = 0.05
+output_per_million = 5.0
+
+[prices."gpt-6.1-sol"]
+input_per_million = 2.0
+cached_read_multiplier = 0.05
+output_per_million = 10.0
